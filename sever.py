@@ -5,30 +5,33 @@ from Crypto.Util.Padding import unpad
 
 app = Flask(__name__)
 
-AES_KEY = b'ThisIsA32ByteLongSecretKey123456'  # Must match encryptor
+AES_KEY = b'ThisIsA32ByteLongSecretKey123456'
+
+@app.route('/')
+def index():
+    return "💀 Silent Killer server is alive."
+
+@app.route('/favicon.ico')
+def favicon():
+    return "", 204
 
 @app.route('/r')
-def redirector():
+def redirect_handler():
     encrypted = request.args.get('l')
     if not encrypted:
-        return abort(400, "Missing encrypted link")
+        abort(400, "Missing 'l' parameter")
 
     try:
-        data = base64.urlsafe_b64decode(encrypted)
-        iv = data[:16]
-        ciphertext = data[16:]
+        encrypted_bytes = base64.urlsafe_b64decode(encrypted)
+        iv = encrypted_bytes[:16]
+        ciphertext = encrypted_bytes[16:]
 
         cipher = AES.new(AES_KEY, AES.MODE_CBC, iv)
-        decrypted = unpad(cipher.decrypt(ciphertext), AES.block_size)
-        url = decrypted.decode('utf-8')
+        decrypted = unpad(cipher.decrypt(ciphertext), AES.block_size).decode('utf-8')
 
-        # Security check
-        if not url.startswith(("http://", "https://")):
-            return abort(400, "Invalid URL")
-
-        return redirect(url)
+        return redirect(decrypted)
     except Exception as e:
-        return f"❌ Decryption error: {str(e)}", 400
+        return f"❌ Decryption failed: {str(e)}", 400
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=80)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=10000)
